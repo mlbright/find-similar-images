@@ -65,7 +65,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             Some(list) => {
                 list.push(entry.into_path());
             }
-            _ => {
+            None => {
                 let new_list: Vec<std::path::PathBuf> = vec![entry.into_path()];
                 filegroups.insert(metadata.len(), new_list);
             }
