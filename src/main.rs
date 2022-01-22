@@ -1,4 +1,4 @@
-use dssim;
+use rayon::prelude::*;
 use std::collections::HashMap;
 use std::fs;
 use std::{error::Error, path::PathBuf};
@@ -8,7 +8,7 @@ fn is_hidden(entry: &DirEntry) -> bool {
     entry
         .file_name()
         .to_str()
-        .map(|s| s.starts_with("."))
+        .map(|s| s.starts_with('.'))
         .unwrap_or(false)
 }
 
@@ -66,56 +66,62 @@ fn main() -> Result<(), Box<dyn Error>> {
                 list.push(entry.into_path());
             }
             _ => {
-                let mut new_list: Vec<std::path::PathBuf> = Vec::new();
-                new_list.push(entry.into_path());
+                let new_list: Vec<std::path::PathBuf> = vec![entry.into_path()];
                 filegroups.insert(metadata.len(), new_list);
             }
         }
     }
 
+    let attr = dssim::Dssim::new();
+
     for (size, paths) in filegroups.iter() {
         if paths.len() > 1 {
-            for (i, original) in paths.iter().enumerate() {
-                let context1 = dssim::new();
-                let original_image: dssim::DssimImage<f32>;
-                match dssim::load_image(&context1, original.as_path()) {
-                    Ok(im) => {
-                        original_image = im;
-                    }
-                    Err(e) => {
-                        println!("error loading image: {:?}", e);
+            let files = paths
+                .par_iter()
+                .map(|file| -> Result<_, String> {
+                    let image = dssim::load_image(&attr, &file)
+                        .map_err(|e| format!("Can't load {}, because: {}", file.display(), e))?;
+                    Ok((file, image))
+                })
+                .collect::<Result<Vec<_>, _>>();
+
+            let files = match files {
+                Ok(f) => f,
+                Err(err) => {
+                    eprintln!("error: {}", err);
+                    continue;
+                }
+            };
+
+            for index in 0..files.len() - 1 {
+                let (file1, original) = &files[index];
+                for (file2, modified) in &files[index + 1..] {
+                    if original.width() != modified.width()
+                        || original.height() != modified.height()
+                    {
+                        println!(
+                            "invalid: image {} has a different size ({}x{}) than {} ({}x{})\n",
+                            file2.display(),
+                            modified.width(),
+                            modified.height(),
+                            file1.display(),
+                            original.width(),
+                            original.height()
+                        );
                         continue;
                     }
-                }
 
-                for (j, p) in paths.iter().enumerate() {
-                    if i < j {
-                        let modified_image: dssim::DssimImage<f32>;
-                        match dssim::load_image(&context1, p.as_path()) {
-                            Ok(im) => {
-                                modified_image = im;
-                            }
-                            Err(e) => {
-                                println!("error loading image: {:?}", e);
-                                continue;
-                            }
-                        }
+                    let (v, _ssim_maps) = attr.compare(original, modified);
 
-                        if original_image.height() != modified_image.height()
-                            || original_image.width() != modified_image.width()
-                        {
-                            continue;
-                        }
-
-                        let val = context1.compare(&original_image, &modified_image);
-
+                    if v < 0.00006 {
                         println!(
-                            "size={} sim={}:\n\toriginal: {}\n\tmodified: {}",
+                            "similar: {:.8}\t{}\t{}\t{}",
+                            v,
                             size,
-                            val.0,
-                            original.display(),
-                            p.display(),
+                            file1.display(),
+                            file2.display()
                         );
+                        break;
                     }
                 }
             }
