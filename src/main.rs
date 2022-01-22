@@ -32,7 +32,7 @@ struct PicuratorError(String);
 
 impl std::fmt::Display for PicuratorError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "There is an error: {}", self.0)
+        write!(f, "error: {}", self.0)
     }
 }
 
