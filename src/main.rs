@@ -111,7 +111,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         continue;
                     }
 
-                    let (v, _ssim_maps) = attr.compare(original, modified);
+                    let (v, _) = attr.compare(original, modified);
 
                     if v < 0.00006 {
                         println!(
