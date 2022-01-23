@@ -27,22 +27,10 @@ fn is_applicable_image(entry: &DirEntry) -> bool {
         .unwrap_or(false)
 }
 
-#[derive(Debug)]
-struct PicuratorError(String);
-
-impl std::fmt::Display for PicuratorError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "error: {}", self.0)
-    }
-}
-
-impl Error for PicuratorError {}
-
 fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = std::env::args().collect();
     if args.len() != 2 {
-        let err = "Supply a single directory for processing";
-        return Err(Box::new(PicuratorError(err.to_owned())));
+        return Err("Supply a single directory for processing".into());
     }
 
     let image_dir = &args[1];
