@@ -62,7 +62,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let attr = dssim::Dssim::new();
 
-    for (size, paths) in filegroups.iter() {
+    filegroups.par_iter().for_each(|x| {
+        let (size, paths) = x;
         if paths.len() > 1 {
             let files = paths
                 .par_iter()
@@ -77,7 +78,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 Ok(f) => f,
                 Err(err) => {
                     eprintln!("error: {}", err);
-                    continue;
+                    return;
                 }
             };
 
@@ -114,7 +115,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
             }
         }
-    }
+    });
 
     Ok(())
 }
