@@ -9,7 +9,7 @@ It can be slow for large directories, even if the [library that computes (dis)si
 I used it to find multiple gigabytes of identical pictures in my MacOS Photos app directory.
 
 ```bash
-find-similar-images "/Users/mlbright/Pictures/Photos Library.photoslibrary/originals" | tee similarities.log
+find-similar-images "/Users/mlbright/Pictures/Photos Library.photoslibrary/originals" | tee different-yet-similar.txt
 ```
 
 A similarity score of `0.000000` means the files are identical.
